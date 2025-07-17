@@ -1,7 +1,7 @@
 # docker-compose.yml
 # Orchestration complète avec optimisations
 
-version: '3.8'
+#version: '3.8'
 
 services:
   # Service principal - Interface Chainlit
