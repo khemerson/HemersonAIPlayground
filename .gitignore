@@ -147,3 +147,29 @@ vite.config.ts.timestamp-*
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Fichiers de configuration sensibles
+.env
+*.env.local
+*.env.production
+
+# Données temporaires
+data/uploads/*
+data/sessions/*
+data/redis/*
+logs/*
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+*.log
+
+# Dépendances
+node_modules/
+__pycache__/
+*.pyc
+
+# Fichiers de build
+build/
+dist/
+*.egg-info/
