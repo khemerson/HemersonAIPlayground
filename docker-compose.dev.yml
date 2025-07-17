@@ -1,0 +1,112 @@
+# docker-compose.yml
+# Orchestration complète avec optimisations
+
+version: '3.8'
+
+services:
+  # Service principal - Interface Chainlit
+  chainlit-playground:
+    build: .
+    ports:
+      - "8000:8000"  # Interface Chainlit
+    environment:
+      # Configuration des services IA (vos endpoints exacts)
+      - MISTRAL_ENDPOINT=http://ollamartx40900:11434
+      - MAGISTRAL_ENDPOINT=http://hybridworker30901:11434
+      - PIXTRAL_ENDPOINT=http://hybridworker30903:11434
+      - WHISPER_ENDPOINT=http://hybridworker30901:8000
+      - TTS_ENDPOINT=http://hybridworker30901:8001
+      - COMFYUI_ENDPOINT=http://comfyuirtx40902:8188
+      
+      # Configuration Redis pour sessions
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      
+      # Configuration sécurité
+      - MAX_REQUESTS_PER_MINUTE=15
+      - MAX_REQUESTS_PER_HOUR=100
+      - SESSION_TIMEOUT_MINUTES=45
+      
+      # Configuration Chainlit
+      - CHAINLIT_HOST=0.0.0.0
+      - CHAINLIT_PORT=8000
+      
+    depends_on:
+      - redis
+    volumes:
+      - ./data/uploads:/app/uploads
+      - ./data/sessions:/app/sessions
+      - ./logs:/app/logs
+    networks:
+      - chainlit-network
+      - hemerson-network  # Votre réseau existant
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Service Redis optimisé
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - ./data/redis:/data
+    networks:
+      - chainlit-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Worker pour tâches asynchrones
+  chainlit-worker:
+    build: .
+    command: python -m celery -A services.task_worker worker --loglevel=info
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - MISTRAL_ENDPOINT=http://ollamartx40900:11434
+      - MAGISTRAL_ENDPOINT=http://hybridworker30901:11434
+      - PIXTRAL_ENDPOINT=http://hybridworker30901:11434
+      - WHISPER_ENDPOINT=http://hybridworker30901:8000
+      - TTS_ENDPOINT=http://hybridworker30901:8001
+      - COMFYUI_ENDPOINT=http://comfyuirtx40902:8188
+    depends_on:
+      - redis
+    volumes:
+      - ./data/uploads:/app/uploads
+      - ./logs:/app/logs
+    networks:
+      - chainlit-network
+      - hemerson-network
+    restart: unless-stopped
+
+  # Monitoring des tâches
+  flower:
+    build: .
+    command: python -m celery -A services.task_worker flower --port=5555
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+    depends_on:
+      - redis
+    networks:
+      - chainlit-network
+    restart: unless-stopped
+
+networks:
+  chainlit-network:
+    driver: bridge
+  hemerson-network:
+    external: true  # Votre réseau HemersonAIBuild existant
+
+volumes:
+  redis_data:
+  upload_data:
+  session_data:

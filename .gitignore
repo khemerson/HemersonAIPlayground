@@ -1,0 +1,149 @@
+# =================================================================
+# HemersonAIBuild .gitignore
+# Version consolidée, organisée et spécifique au projet
+# =================================================================
+
+# 1. Fichiers sensibles et secrets
+# A NE JAMAIS VERSIONNER. Contiennent des clés, mots de passe, etc.
+# =================================================================
+.env
+.env.*
+!.env.example
+credentials.json
+*.pem
+*.key
+*.cer
+*.p12
+*.pfx
+
+
+# 2. Infrastructure as Code (Terraform, Packer, Ansible)
+# Contiennent des états, des plans ou des variables qui ne doivent pas être versionnés.
+# =================================================================
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfplan
+.terraform.lock.hcl
+*.tfvars
+*.tfvars.json
+.terraform/
+crash.log
+crash.*.log
+
+# Packer
+packer_cache/
+packer-files/
+
+# Ansible
+*.retry
+ansible.log
+
+
+# 3. Stack IA & Python (Ollama, ComfyUI, Stable Diffusion, etc.)
+# Environnements virtuels, caches, et surtout les modèles et images générées.
+# =================================================================
+# Python général
+venv/
+env/
+.venv/
+.env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ipynb_checkpoints
+
+# Modèles et données ML (générique)
+*.h5
+*.pkl
+*.joblib
+*.pt
+*.pth
+*.safetensors
+
+# ComfyUI / Stable Diffusion
+# IMPORTANT: Ignore les modèles, les images générées/uploadées et les nodes custom.
+# Ces dossiers peuvent peser des centaines de Go.
+ComfyUI/models/
+ComfyUI/output/
+ComfyUI/input/
+ComfyUI/custom_nodes/
+
+# AnythingLLM
+anythingllm-deployment/storage/
+
+# 4. Services et Bases de Données (Redis, Caddy)
+# =================================================================
+# Redis
+dump.rdb
+
+# Caddy (si vous stockez des certificats ou états localement)
+/data/caddy/
+
+
+# 5. Environnement de Développement & OS
+# Fichiers spécifiques à l'éditeur de code et au système d'exploitation.
+# =================================================================
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*~
+
+
+# 6. Dépendances et Artefacts de Build (Node.js / Frontend)
+# Couvre OpenWebUI et autres outils basés sur Node.js
+# =================================================================
+# Dépendances
+node_modules/
+jspm_packages/
+bower_components/
+web_modules/
+
+# Caches
+.cache/
+.parcel-cache/
+.npm/
+.eslintcache
+.stylelintcache
+.svelte-kit/
+.temp/
+.docusaurus/
+.fusebox/
+.firebase/
+.nyc_output/
+
+# Artefacts de build
+dist/
+out/
+build/
+.next/
+.nuxt/
+.vuepress/dist/
+**/.vitepress/dist
+**/.vitepress/cache
+
+# Logs et Fichiers d'exécution
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pids/
+*.pid
+*.seed
+*.pid.lock
+*.tgz
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Yarn PnP
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
