@@ -11,12 +11,12 @@ services:
       - "8000:8000"  # Interface Chainlit
     environment:
       # Configuration des services IA (vos endpoints exacts)
-      - MISTRAL_ENDPOINT=http://ollamartx40900:11434
-      - MAGISTRAL_ENDPOINT=http://hybridworker30901:11434
-      - PIXTRAL_ENDPOINT=http://hybridworker30903:11434
-      - WHISPER_ENDPOINT=http://hybridworker30901:8000
-      - TTS_ENDPOINT=http://hybridworker30901:8001
-      - COMFYUI_ENDPOINT=http://comfyuirtx40902:8188
+      - MISTRAL_ENDPOINT=http://192.168.1.211:11434
+      - MAGISTRAL_ENDPOINT=http://192.168.1.214:11434
+      - PIXTRAL_ENDPOINT=http://192.168.1.212:11434
+      - WHISPER_ENDPOINT=http://192.168.1.212:8000
+      - TTS_ENDPOINT=http://192.168.1.214:8001
+      - COMFYUI_ENDPOINT=http://192.168.1.213:8188
       
       # Configuration Redis pour sessions
       - REDIS_HOST=redis
@@ -69,12 +69,12 @@ services:
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/1
       - CELERY_RESULT_BACKEND=redis://redis:6379/2
-      - MISTRAL_ENDPOINT=http://ollamartx40900:11434
-      - MAGISTRAL_ENDPOINT=http://hybridworker30901:11434
-      - PIXTRAL_ENDPOINT=http://hybridworker30901:11434
-      - WHISPER_ENDPOINT=http://hybridworker30901:8000
-      - TTS_ENDPOINT=http://hybridworker30901:8001
-      - COMFYUI_ENDPOINT=http://comfyuirtx40902:8188
+      - MISTRAL_ENDPOINT=http://192.168.1.211:11434
+      - MAGISTRAL_ENDPOINT=http://192.168.1.214:11434
+      - PIXTRAL_ENDPOINT=http://192.168.1.212:11434
+      - WHISPER_ENDPOINT=http://192.168.1.212:8000
+      - TTS_ENDPOINT=http://192.168.1.214:8001
+      - COMFYUI_ENDPOINT=http://192.168.1.213:8188
     depends_on:
       - redis
     volumes:

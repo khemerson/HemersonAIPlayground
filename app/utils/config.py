@@ -20,22 +20,22 @@ class Settings(BaseSettings):
     # Configuration exacte de votre infrastructure HemersonAIBuild
     
     # Mistral Small sur RTX 4090
-    MISTRAL_ENDPOINT: str = os.getenv("MISTRAL_ENDPOINT", "http://ollamartx40900:11434")
+    MISTRAL_ENDPOINT: str = os.getenv("MISTRAL_ENDPOINT", "http://192.168.1.211:11434")
     
     # Magistral pour analyses approfondies sur RTX 3090
-    MAGISTRAL_ENDPOINT: str = os.getenv("MAGISTRAL_ENDPOINT", "http://hybridworker30901:11434")
+    MAGISTRAL_ENDPOINT: str = os.getenv("MAGISTRAL_ENDPOINT", "http://192.168.1.214:11434")
     
     # Pixtral pour analyse d'images sur RTX 4090
-    PIXTRAL_ENDPOINT: str = os.getenv("PIXTRAL_ENDPOINT", "http://hybridworker30903:11434")
+    PIXTRAL_ENDPOINT: str = os.getenv("PIXTRAL_ENDPOINT", "http://192.168.1.212:11434")
     
     # Whisper Large V3 sur RTX 3090 (port 8000)
-    WHISPER_ENDPOINT: str = os.getenv("WHISPER_ENDPOINT", "http://hybridworker30901:8000")
+    WHISPER_ENDPOINT: str = os.getenv("WHISPER_ENDPOINT", "http://192.168.1.212:8000")
     
     # TTS5 sur RTX 3090 (port 8001)
-    TTS_ENDPOINT: str = os.getenv("TTS_ENDPOINT", "http://hybridworker30901:8001")
+    TTS_ENDPOINT: str = os.getenv("TTS_ENDPOINT", "http://192.168.1.214:8001")
     
     # ComfyUI sur RTX 4090
-    COMFYUI_ENDPOINT: str = os.getenv("COMFYUI_ENDPOINT", "http://comfyuirtx40902:8188")
+    COMFYUI_ENDPOINT: str = os.getenv("COMFYUI_ENDPOINT", "http://192.168.1.213:8188")
     
     # === CONFIGURATION REDIS ===
     # Redis pour les sessions et le cache
