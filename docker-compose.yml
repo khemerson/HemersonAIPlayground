@@ -1,112 +1,121 @@
 # docker-compose.yml
-# Orchestration complète avec optimisations
-
-#version: '3.8'
+version: '3.8'
 
 services:
-  # Service principal - Interface Chainlit
-  chainlit-playground:
-    build: .
-    ports:
-      - "8000:8000"  # Interface Chainlit
-    environment:
-      # Configuration des services IA (vos endpoints exacts)
-      - MISTRAL_ENDPOINT=http://192.168.1.211:11434
-      - MAGISTRAL_ENDPOINT=http://192.168.1.214:11434
-      - PIXTRAL_ENDPOINT=http://192.168.1.212:11434
-      - WHISPER_ENDPOINT=http://192.168.1.212:8000
-      - TTS_ENDPOINT=http://192.168.1.214:8001
-      - COMFYUI_ENDPOINT=http://192.168.1.213:8188
-      
-      # Configuration Redis pour sessions
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      
-      # Configuration sécurité
-      - MAX_REQUESTS_PER_MINUTE=15
-      - MAX_REQUESTS_PER_HOUR=100
-      - SESSION_TIMEOUT_MINUTES=45
-      
-      # Configuration Chainlit
-      - CHAINLIT_HOST=0.0.0.0
-      - CHAINLIT_PORT=8000
-      
-    depends_on:
-      - redis
-    volumes:
-      - ./data/uploads:/app/uploads
-      - ./data/sessions:/app/sessions
-      - ./logs:/app/logs
-    networks:
-      - chainlit-network
-      - hemerson-network  # Votre réseau existant
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Service Redis optimisé
+  # === SERVICE REDIS ===
   redis:
     image: redis:7-alpine
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
-    volumes:
-      - ./data/redis:/data
-    networks:
-      - chainlit-network
+    container_name: hemerson-redis
     restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./docker/redis/redis.conf:/etc/redis/redis.conf
+    command: redis-server /etc/redis/redis.conf
+    networks:
+      - hemerson-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 30s
 
-  # Worker pour tâches asynchrones
-  chainlit-worker:
-    build: .
-    command: python -m celery -A services.task_worker worker --loglevel=info
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/1
-      - CELERY_RESULT_BACKEND=redis://redis:6379/2
-      - MISTRAL_ENDPOINT=http://192.168.1.211:11434
-      - MAGISTRAL_ENDPOINT=http://192.168.1.214:11434
-      - PIXTRAL_ENDPOINT=http://192.168.1.212:11434
-      - WHISPER_ENDPOINT=http://192.168.1.212:8000
-      - TTS_ENDPOINT=http://192.168.1.214:8001
-      - COMFYUI_ENDPOINT=http://192.168.1.213:8188
-    depends_on:
-      - redis
-    volumes:
-      - ./data/uploads:/app/uploads
-      - ./logs:/app/logs
-    networks:
-      - chainlit-network
-      - hemerson-network
+  # === SERVICE PRINCIPAL ===
+  app:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+      target: production
+    container_name: hemerson-app
     restart: unless-stopped
-
-  # Monitoring des tâches
-  flower:
-    build: .
-    command: python -m celery -A services.task_worker flower --port=5555
     ports:
-      - "5555:5555"
+      - "8000:8000"
     environment:
-      - CELERY_BROKER_URL=redis://redis:6379/1
-      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./data:/data
+      - ./logs:/app/logs
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     networks:
-      - chainlit-network
+      - hemerson-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+  # === NGINX REVERSE PROXY ===
+  nginx:
+    image: nginx:alpine
+    container_name: hemerson-nginx
     restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./docker/nginx/sites-enabled:/etc/nginx/sites-enabled
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - hemerson-network
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-networks:
-  chainlit-network:
-    driver: bridge
-  hemerson-network:
-    external: true  # Votre réseau HemersonAIBuild existant
+  # === MONITORING (OPTIONNEL) ===
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: hemerson-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - hemerson-network
 
+# === VOLUMES ===
 volumes:
   redis_data:
-  upload_data:
-  session_data:
+    driver: local
+  nginx_logs:
+    driver: local
+  prometheus_data:
+    driver: local
+
+# === RÉSEAU ===
+networks:
+  hemerson-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
